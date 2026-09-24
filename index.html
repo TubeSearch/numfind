@@ -1,0 +1,59 @@
+<h1>number finder</h1>
+<input type="text" id="num">
+<button onclick="go()">find</button>
+<p id="result"></p>
+<p id="nums"></p>
+<button onclick="toggle()">expand</button>
+<p id="steps" hidden></p>
+
+<script>
+var names = ["", "x2", "+1", "-1"];
+
+function go() {
+  var n = parseInt(document.getElementById("num").value);
+  var lim = 2 * n + 2;
+  var dist = new Int32Array(lim + 1).fill(-1);
+  var par = new Int32Array(lim + 1);
+  var op = new Uint8Array(lim + 1);
+  var queue = new Int32Array(lim + 1);
+  var head = 0;
+  var tail = 0;
+  queue[tail++] = 1;
+  dist[1] = 0;
+
+  while (head < tail) {
+    var c = queue[head++];
+    if (c == n) break;
+    var next = [c * 2, c + 1, c - 1];
+    for (var i = 0; i < 3; i++) {
+      var x = next[i];
+      if (x >= 0 && x <= lim && dist[x] == -1) {
+        dist[x] = dist[c] + 1;
+        par[x] = c;
+        op[x] = i + 1;
+        queue[tail++] = x;
+      }
+    }
+  }
+
+  var list = [];
+  var path = [n];
+  var cur = n;
+  while (cur != 1) {
+    list.push(names[op[cur]]);
+    cur = par[cur];
+    path.push(cur);
+  }
+  list.reverse();
+  path.reverse();
+
+  document.getElementById("result").innerText = "fewest steps: " + dist[n];
+  document.getElementById("nums").innerText = path.join(", ");
+  document.getElementById("steps").innerText = list.join(", ");
+}
+
+function toggle() {
+  var steps = document.getElementById("steps");
+  steps.hidden = !steps.hidden;
+}
+</script>
