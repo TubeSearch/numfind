@@ -7,47 +7,79 @@
 <p id="steps" hidden></p>
 
 <script>
-var names = ["", "x2", "+1", "-1"];
-
 function go() {
-  var n = parseInt(document.getElementById("num").value);
-  var lim = 2 * n + 2;
-  var dist = new Int32Array(lim + 1).fill(-1);
-  var par = new Int32Array(lim + 1);
-  var op = new Uint8Array(lim + 1);
-  var queue = new Int32Array(lim + 1);
-  var head = 0;
-  var tail = 0;
-  queue[tail++] = 1;
-  dist[1] = 0;
+  var n = BigInt(document.getElementById("num").value);
+  if (n < 0n) return;
+  if (n === 0n) {
+    document.getElementById("result").innerText = "fewest steps: 1";
+    document.getElementById("nums").innerText = "1, 0";
+    document.getElementById("steps").innerText = "-1";
+    return;
+  }
 
-  while (head < tail) {
-    var c = queue[head++];
-    if (c == n) break;
-    var next = [c * 2, c + 1, c - 1];
-    for (var i = 0; i < 3; i++) {
-      var x = next[i];
-      if (x >= 0 && x <= lim && dist[x] == -1) {
-        dist[x] = dist[c] + 1;
-        par[x] = c;
-        op[x] = i + 1;
-        queue[tail++] = x;
+  var levels = [[n]];
+  var cur = [n];
+  while (true) {
+    var nxt = [];
+    var seen = new Set();
+    for (var i = 0; i < cur.length; i++) {
+      var v = cur[i];
+      if (v <= 1n) continue;
+      var kids = (v % 2n === 0n) ? [v / 2n] : [(v - 1n) / 2n, (v + 1n) / 2n];
+      for (var k = 0; k < kids.length; k++) {
+        if (!seen.has(kids[k])) {
+          seen.add(kids[k]);
+          nxt.push(kids[k]);
+        }
+      }
+    }
+    if (nxt.length == 0) break;
+    levels.push(nxt);
+    cur = nxt;
+  }
+
+  var cost = new Map();
+  cost.set(1n, 0);
+  for (var l = levels.length - 1; l >= 0; l--) {
+    for (var i = 0; i < levels[l].length; i++) {
+      var v = levels[l][i];
+      if (v == 1n) continue;
+      if (v % 2n === 0n) {
+        cost.set(v, 1 + cost.get(v / 2n));
+      } else {
+        cost.set(v, 2 + Math.min(cost.get((v - 1n) / 2n), cost.get((v + 1n) / 2n)));
       }
     }
   }
 
-  var list = [];
   var path = [n];
-  var cur = n;
-  while (cur != 1) {
-    list.push(names[op[cur]]);
-    cur = par[cur];
-    path.push(cur);
+  var list = [];
+  var v = n;
+  while (v > 1n) {
+    if (v % 2n === 0n) {
+      list.push("x2");
+      v = v / 2n;
+      path.push(v);
+    } else {
+      var a = (v - 1n) / 2n;
+      var b = (v + 1n) / 2n;
+      if (cost.get(a) <= cost.get(b)) {
+        list.push("+1");
+        path.push(v - 1n);
+        v = a;
+      } else {
+        list.push("-1");
+        path.push(v + 1n);
+        v = b;
+      }
+      list.push("x2");
+      path.push(v);
+    }
   }
   list.reverse();
   path.reverse();
 
-  document.getElementById("result").innerText = "fewest steps: " + dist[n];
+  document.getElementById("result").innerText = "fewest steps: " + list.length;
   document.getElementById("nums").innerText = path.join(", ");
   document.getElementById("steps").innerText = list.join(", ");
 }
