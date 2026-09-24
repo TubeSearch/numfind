@@ -7,85 +7,76 @@
 <p id="steps" hidden></p>
 
 <script>
+// start at 1, can do x2,+1,-1
+var memo = {};
+
+function best(n) {
+  if (n == 1n) return 0;
+  var key = n.toString();
+  if (memo[key] !== undefined) return memo[key];
+
+  var r;
+  if (n % 2n === 0n) {
+    r = 1 + best(n / 2n);
+  } else {
+    // odd so go to the number above or below first, then x2 and +1/-1
+    r = 2 + Math.min(best((n - 1n) / 2n), best((n + 1n) / 2n));
+  }
+  memo[key] = r;
+  return r;
+}
+
 function go() {
   var n = BigInt(document.getElementById("num").value);
   if (n < 0n) return;
-  if (n === 0n) {
+
+  // 0 is just 1 -1
+  if (n == 0n) {
     document.getElementById("result").innerText = "fewest steps: 1";
     document.getElementById("nums").innerText = "1, 0";
     document.getElementById("steps").innerText = "-1";
     return;
   }
 
-  var levels = [[n]];
-  var cur = [n];
-  while (true) {
-    var nxt = [];
-    var seen = new Set();
-    for (var i = 0; i < cur.length; i++) {
-      var v = cur[i];
-      if (v <= 1n) continue;
-      var kids = (v % 2n === 0n) ? [v / 2n] : [(v - 1n) / 2n, (v + 1n) / 2n];
-      for (var k = 0; k < kids.length; k++) {
-        if (!seen.has(kids[k])) {
-          seen.add(kids[k]);
-          nxt.push(kids[k]);
-        }
-      }
-    }
-    if (nxt.length == 0) break;
-    levels.push(nxt);
-    cur = nxt;
-  }
-
-  var cost = new Map();
-  cost.set(1n, 0);
-  for (var l = levels.length - 1; l >= 0; l--) {
-    for (var i = 0; i < levels[l].length; i++) {
-      var v = levels[l][i];
-      if (v == 1n) continue;
-      if (v % 2n === 0n) {
-        cost.set(v, 1 + cost.get(v / 2n));
-      } else {
-        cost.set(v, 2 + Math.min(cost.get((v - 1n) / 2n), cost.get((v + 1n) / 2n)));
-      }
-    }
-  }
-
-  var path = [n];
-  var list = [];
+  var steps = [];
+  var nums = [n];
   var v = n;
+
+  // work backwards from n down to 1
   while (v > 1n) {
     if (v % 2n === 0n) {
-      list.push("x2");
+      steps.push("x2");
       v = v / 2n;
-      path.push(v);
+      nums.push(v);
     } else {
       var a = (v - 1n) / 2n;
       var b = (v + 1n) / 2n;
-      if (cost.get(a) <= cost.get(b)) {
-        list.push("+1");
-        path.push(v - 1n);
+      if (best(a) <= best(b)) {
+        steps.push("+1");
+        nums.push(v - 1n);
         v = a;
       } else {
-        list.push("-1");
-        path.push(v + 1n);
+        steps.push("-1");
+        nums.push(v + 1n);
         v = b;
       }
-      list.push("x2");
-      path.push(v);
+      steps.push("x2");
+      nums.push(v);
     }
   }
-  list.reverse();
-  path.reverse();
 
-  document.getElementById("result").innerText = "fewest steps: " + list.length;
-  document.getElementById("nums").innerText = path.join(", ");
-  document.getElementById("steps").innerText = list.join(", ");
+  // it was backwards so flip it
+  steps.reverse();
+  nums.reverse();
+  //console.log(steps);
+
+  document.getElementById("result").innerText = "fewest steps: " + steps.length;
+  document.getElementById("nums").innerText = nums.join(", ");
+  document.getElementById("steps").innerText = steps.join(", ");
 }
 
 function toggle() {
-  var steps = document.getElementById("steps");
-  steps.hidden = !steps.hidden;
+  var s = document.getElementById("steps");
+  s.hidden = !s.hidden;
 }
 </script>
